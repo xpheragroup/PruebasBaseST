@@ -26,9 +26,10 @@ class PurchaseOrder(models.Model):
 
     def button_approve(self, force=False):
         if not self.is_gift:
+            result = super(PurchaseOrder, self).button_approve(force=force)
             self.write(
                 {'name': self.env['ir.sequence'].next_by_code('purchase.order') or '/'})
-        return super(PurchaseOrder, self).button_approve(force=force)
+        return result
 
     def get_taxes(self):
         taxes = {}
