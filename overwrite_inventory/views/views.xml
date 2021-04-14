@@ -291,4 +291,28 @@
             </form>
         </field>
     </record>
+    <record model="ir.module.category" id="inventory_adjustment">
+        <field name="name">Ajuste de inventario</field>
+        <field name="description">El usuario puede validar ajustes de inventario</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="inventory_adjustment_user" model="res.groups">
+        <field name="name">Administrador ajuste de inventario</field>
+        <field name="category_id" ref="inventory_adjustment"/>
+    </record>
+
+    <record id="view_category_property_form" model="ir.ui.view">
+        <field name="name">product.category.property.form.inherit</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="after">
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </xpath> 
+        </field>
+    </record>
+
 </odoo>

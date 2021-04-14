@@ -2,9 +2,8 @@ import re
 from odoo import api, models, _
 from odoo.exceptions import UserError
 
-EMAIL_REGEX = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
+EMAIL_REGEX = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})*(\.\w{2,3})+$'
 PHONE_REGEX = '^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$'
-
 
 def regex_validation_message(field, regex, message):
     if field:
@@ -15,7 +14,7 @@ def regex_validation_message(field, regex, message):
 
 def validation_email(email):
     message = _(
-        'El correo "{}" no tiene el formato requerido: correo@dominio.dominio')
+        'El correo "{}" no tiene el formato requerido: correo@dominio.dominio o correo@dominio.dominio.dominio')
     return regex_validation_message(email, EMAIL_REGEX, message.format(email))
 
 
@@ -39,36 +38,45 @@ class Partner(models.Model):
     _inherit = 'res.partner'
 
     def check_name(self, vals):
-        if not vals.get('company_id', False):
-            vals['company_id'] = self.company_id.id
+        if vals.get('company_id', False):
+            company_id = vals.get('company_id', False)
+        else:
+            company_id = self.company_id.id
         existing_query = [
             ('name', '=', vals['name']),
             ('id', '!=', self.id),
-            ('company_id', '=', vals['company_id'])
+            ('company_id', '=', company_id)
         ]
         partner_model = self.env['res.partner']
         exists = partner_model.search(existing_query)
         if exists:
             message = _(
-                'El proveedor con nombre "{}" ya esta creado en la empresa, modifique' +
+                'El contacto con nombre "{}" ya esta creado en la empresa, modifique' +
                 ' el nombre')
             raise UserError(message.format(vals['name']))
 
     def check_vat(self, vals):
-        if not vals.get('company_id', False):
-            vals['company_id'] = self.company_id.id
-        existing_query = [
-            ('vat', '=', vals[vat]),
-            ('id', '!=', self.id),
-            ('company_id', '=', vals['company_id'])
-        ]
-        partner_model = self.env['res.partner']
-        exists = partner_model.search(existing_query)
-        if exists:
-            message = _(
-                'El proveedor con identificación "' + record.vat +
-                '" ya esta creado en la empresa, modifique la identificación.')
-            raise UserError(message.format(vals['vat']))
+        if vals.get('company_id', False):
+            company_id = vals.get('company_id', False)
+        else:
+            company_id = self.company_id.id
+        if vals.get('parent_id', False):
+            parent_id = vals.get('parent_id', False)
+        else:
+            parent_id = self.parent_id.id
+        if not parent_id:
+            existing_query = [
+                ('vat', '=', vals['vat']),
+                ('id', '!=', self.id),
+                ('company_id', '=', company_id)
+            ]
+            partner_model = self.env['res.partner']
+            exists = partner_model.search(existing_query)
+            if exists:
+                message = _(
+                    'El proveedor con identificación "' + vals['vat'] +
+                    '" ya esta creado en la empresa, modifique la identificación.')
+                raise UserError(message.format(vals['vat']))
 
     def do_validations(self, vals):
         validation_email(vals.get('email', False))
